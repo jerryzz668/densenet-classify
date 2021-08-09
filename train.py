@@ -25,18 +25,18 @@ import pdb
 # from tensorboard_logger import configure, log_value
 
 parser = argparse.ArgumentParser(description='PyTorch DenseNet Training')
-parser.add_argument('--epochs', default=330, type=int,
+parser.add_argument('--epochs', default=300, type=int,
                     help='number of total epochs to run')
 parser.add_argument('--start-epoch', default=0, type=int,
                     help='manual epoch number (useful on restarts)')
-parser.add_argument('-b', '--batch-size', default=64, type=int,
+parser.add_argument('-b', '--batch-size', default=16, type=int,
                     help='mini-batch size (default: 32)')
 parser.add_argument('--lr', '--learning-rate', default=0.0001, type=float,
                     help='initial learning rate')
 parser.add_argument('--momentum', default=0.9, type=float, help='momentum')
 parser.add_argument('--weight-decay', '--wd', default=1e-4, type=float,
                     help='weight decay (default: 1e-4)')
-parser.add_argument('--print-freq', '-p', default=10, type=int,
+parser.add_argument('--print-freq', '-p', default=5, type=int,
                     help='print frequency (default: 10)')
 parser.add_argument('--layers', default=20, type=int,
                     help='total number of layers (default: 100)')
@@ -62,8 +62,8 @@ parser.set_defaults(augment=False)
 best_prec1 = 0
 slr=0.1
 
-train_dirs = '/home/adt/Desktop/aug_heidian/train'
-val_dirs = '/home/adt/Desktop/aug_heidian/val'
+train_dirs = '/home/jerry/Desktop/fenlei'
+val_dirs = '/home/jerry/Desktop/val_daowen'
 def main():
     global args, best_prec1
     args = parser.parse_args()
@@ -90,7 +90,7 @@ def main():
             # transforms.Pad(padding=32, fill=0, padding_mode='reflect'),
             # # transforms.Resize([1408,1024]),
             # transforms.CenterCrop(96),
-            transforms.Resize([128,128]),
+            transforms.Resize([800,800]),
             # transforms.RandomResizedCrop(64),
             # transforms.RandomHorizontalFlip(),            # transforms.RandomVerticalFlip(),
             # transforms.RandomAffine(3),
@@ -103,7 +103,7 @@ def main():
             ])
     transform_test = transforms.Compose([
         # transforms.CenterCrop(96),
-        transforms.Resize([128,128]),
+        transforms.Resize([800,800]),
         # transforms.Pad(padding=32, fill=0, padding_mode='reflect'),
         # transforms.Resize([1408,1024]),
 

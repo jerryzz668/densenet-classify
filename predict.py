@@ -22,7 +22,7 @@ import pdb
 # used for logging to TensorBoard
 # from tensorboard_logger import configure, log_value
 parser = argparse.ArgumentParser(description='PyTorch DenseNet Training')
-parser.add_argument('--model', '-m', default='/home/adt/Desktop/class/densenet-pytorch-master/runs2_C_aug_heidian/DenseNet_Unet_fs/D_20200323_CP0.pth',
+parser.add_argument('--model', '-m', default='/home/jerry/Documents/code/densenet-pytorch-master/runs2_C_aug_heidian/DenseNet_Unet_fs/D_20200323_CP0.pth',
                     metavar='FILE',
                     help="Specify the file in which is stored the model"
                         " (default : 'model_best.pth')")
@@ -66,8 +66,8 @@ global args, best_prec1
 args = parser.parse_args([])
 # class_to_idx={0:'bai', 1:'hongliang', 2:'hongmie', 3:'huangliang', 4:'huangmie', 5:'luliang', 6:'lumie'}
 class_to_idx={0:'NG', 1:'OK'}
-val_dirs = '/home/adt/Desktop/new_ng_ok_val/NG/'
-output_path='/home/adt/Desktop/test_result/'
+val_dirs = '/home/jerry/Desktop/val_daowen/NG/'
+output_path='/home/jerry/Desktop/test_result/'
 
 # granule_path='C:\\Users\\fs\\Desktop\\410unet+densenet\\densedataset\\test\\result\\granule\\'
 # other_path='C:\\Users\\fs\\Desktop\\410unet+densenet\\densedataset\\test\\result\\other\\'
