@@ -33,13 +33,9 @@ Further, this implementation supports [easy checkpointing](https://github.com/an
 
 ### Tracking training progress with TensorBoard
 To track training progress, this implementation uses [TensorBoard](https://www.tensorflow.org/get_started/summaries_and_tensorboard) which offers great ways to track and compare multiple experiments. To track PyTorch experiments in TensorBoard we use [tensorboard_logger](https://github.com/TeamHG-Memex/tensorboard_logger) which can be installed with 
-```
+```shell
 pip install tensorboard_logger
 ```
-Example training curves for DenseNet-BC-100-12 (dark blue) and DenseNet-40-12 (light blue) for training loss and validation accuracy is shown below. 
-
-![Training Curves](images/Fig4.png)
-
 ### Dependencies
 * [PyTorch](http://pytorch.org/)
 
