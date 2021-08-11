@@ -68,3 +68,12 @@ If this implementation is useful to you and your project, please also consider t
 [3] Veit, A., Wilber, M. J., & Belongie, S. (2016). Residual networks behave like ensembles of relatively shallow networks. In Advances in Neural Information Processing Systems (NIPS '16)
 
 [4] He, K., Zhang, X., Ren, S., & Sun, J. (2016). Deep residual learning for image recognition. In Conference on Computer Vision and Pattern Recognition (CVPR '16)
+
+
+
+
+python train.py --layers 38 --growth 24 --droprate 0.2 --lr 0.0001 --epochs 830
+
+
+
+python train.py --layers 100 --growth 12 --droprate 0.2 --lr 0.1 --resume 'C:\Users\fs\Desktop\densenet-pytorch-master\runs\DenseNet_Unet_fs\checkpoint.pth' --start-epoch 100 --tensorboard

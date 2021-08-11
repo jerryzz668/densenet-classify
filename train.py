@@ -21,8 +21,7 @@ import PIL
 import torchvision.models as models
 from torch.optim import SGD, Adam, lr_scheduler
 import pdb
-# used for logging to TensorBoard
-# from tensorboard_logger import configure, log_value
+
 
 parser = argparse.ArgumentParser(description='PyTorch DenseNet Training')
 parser.add_argument('--epochs', default=300, type=int,
@@ -87,14 +86,8 @@ def main():
             ])
     else:
         transform_train = transforms.Compose([
-            # transforms.Pad(padding=32, fill=0, padding_mode='reflect'),
-            # # transforms.Resize([1408,1024]),
-            # transforms.CenterCrop(96),
-            transforms.Resize([800,800]),
-            # transforms.RandomResizedCrop(64),
-            # transforms.RandomHorizontalFlip(),            # transforms.RandomVerticalFlip(),
-            # transforms.RandomAffine(3),
-            # transforms.ColorJitter(brightness=0.3),
+            transforms.Resize([32,32]),
+
             transforms.ColorJitter(brightness=0.5, contrast=0.5, hue=0.5),
             transforms.RandomAffine(3),
             transforms.RandomHorizontalFlip(),            transforms.RandomVerticalFlip(),
@@ -102,33 +95,25 @@ def main():
             normalize,
             ])
     transform_test = transforms.Compose([
-        # transforms.CenterCrop(96),
-        transforms.Resize([800,800]),
-        # transforms.Pad(padding=32, fill=0, padding_mode='reflect'),
-        # transforms.Resize([1408,1024]),
-
+        transforms.Resize([32,32]),
         transforms.ToTensor(),
         normalize
         ])
-    #normalize = transforms.Normalize(mean=[0.485,0.456,0.406], std=[0.229,0.224,0.225])
 
     train_dataset = datasets.ImageFolder(
         train_dirs,
         transform_train
         )
     print('train_dataset:{}'.format(train_dataset))     
-    #pdb.set_trace()
     val_dataset = datasets.ImageFolder(
         val_dirs,
         transform_test)
              
     kwargs = {'num_workers': 16, 'pin_memory': True}
     train_loader = torch.utils.data.DataLoader(
-        #datasets.CIFAR10('../data', train=True, download=True,transform=transform_train),
         train_dataset,
         batch_size=args.batch_size, shuffle=True, **kwargs)
     val_loader = torch.utils.data.DataLoader(
-        #datasets.CIFAR10('../data', train=False, transform=transform_test),
         val_dataset,
         batch_size=args.batch_size, shuffle=True, **kwargs)
 
@@ -141,15 +126,9 @@ def main():
     print("args.lr",args.lr)
     model = dn.DenseNet3(args.layers, 2, args.growth, reduction=args.reduce,
                          bottleneck=args.bottleneck, dropRate=args.droprate, small_inputs = False)
-    # kwargs = {'num_classes': 2}
-    # model = models2.densenet121(**kwargs)
-    # get the number of model parameters
+
     print('Number of model parameters: {}'.format(
         sum([p.data.nelement() for p in model.parameters()])))
-    
-    # for training on multiple GPUs. 
-    # Use CUDA_VISIBLE_DEVICES=0,1 to specify which GPUs to use
-    # model = torch.nn.DataParallel(model).cuda()
     
     model = model.cuda()
 
@@ -177,19 +156,10 @@ def main():
                                 weight_decay=args.weight_decay)
 
     print ("Start training..")
-    # from adabound import AdaBound
-    # optimizer = AdaBound(model.parameters(), lr=args.lr, betas=(0.9, 0.999,),final_lr=0.1, gamma=1e-3, weight_decay=5e-4, amsbound=True)
-    # optimizer = adabound.AdaBound(model.parameters(), lr=0.001, final_lr=0.1)
-    # lambda1 = lambda epoch: pow((1 - ((epoch - 1) / args.epochs)), 0.99)
-    # scheduler = lr_scheduler.LambdaLR(optimizer, lr_lambda=lambda1)    #  learning rate changed every epoch
+
     for epoch in range(args.start_epoch, args.epochs):
         FS_lr=adjust_learning_rate(optimizer, epoch,args.epochs)
         print("lr='{}'".format(FS_lr))
-        # train for one epoch
-        # scheduler.step(epoch)
-        # for param_group in optimizer.param_groups:
-        #     lr=param_group['lr']
-        # print("lr='{}'".format(lr))
         train(train_loader, model, criterion, optimizer, epoch)
 
         # evaluate on validation set
@@ -216,26 +186,15 @@ def train(train_loader, model, criterion, optimizer, epoch):
 
     end = time.time()
     for i, (input, target) in enumerate(train_loader):
-        #pdb.set_trace()
+
         target = target.cuda()
         input = input.cuda()
-        # print('input:{}'.format(input))
-        # print('input.size:{}'.format(input.size(2)))
         input_var = torch.autograd.Variable(input)
         target_var = torch.autograd.Variable(target)
-        # print('input_var:{}'.format(input_var))
-        # print('input_var.size:{}'.format(input_var.size(2)))
-        # print('target:{}'.format(target))
-        # print('target_var:{}'.format(target_var))
-        # print('target_var.size:{}'.format(target_var.size(0)))
         # compute output
         output = model(input_var)
-        # print("output>shape:",output.shape)
-        # print('output:{}'.format(output.size()))
-        #pdb.set_trace()
         loss = criterion(output, target_var)
-        # print('loss:{}'.format(loss))
-        # measure accuracy and record loss
+
         prec1 = accuracy(output.data, target, topk=(1,))[0]
         losses.update(loss.item(), input.size(0))
         top1.update(prec1.item(), input.size(0))
@@ -357,28 +316,13 @@ def adjust_learning_rate(optimizer, epoch,epochs):
 def accuracy(output, target, topk=(1,)):
     """Computes the precision@k for the specified values of k"""
     maxk = max(topk)
-    # print('topk:{}'.format(topk))
-    # print('maxk:{}'.format(maxk))
     batch_size = target.size(0)
     
-    
     _, pred = output.topk(maxk, 1, True, True)
-    # print('_:{}'.format(_))
-    # print('pred:{}'.format(pred))
     pred = pred.t()
-    # print('pred2:{}'.format(pred))
-    # print('target:{}'.format(target))
-    # print('target.view(1, -1):{}'.format(target.view(1, -1)))
-
-    # target.view(1, -1)
     correct = pred.eq(target.view(1, -1).expand_as(pred))
-    # print('correct:{}'.format(correct))
     res = []
     for k in topk:
-        # print('k:{}'.format(k))
-        # print('correct[:k]:{}'.format(correct[:k].view(-1)))
-        # print('correct[:k].size():{}'.format(correct[:k].view(-1).size()))
-        # a.view(-1),
         correct_k = correct[:k].view(-1).float().sum(0)
         res.append(correct_k.mul_(100.0 / batch_size))
     return res

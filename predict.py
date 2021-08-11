@@ -19,8 +19,7 @@ import xlsxwriter
 
 import models.densenet as dn
 import pdb
-# used for logging to TensorBoard
-# from tensorboard_logger import configure, log_value
+
 parser = argparse.ArgumentParser(description='PyTorch DenseNet Training')
 parser.add_argument('--model', '-m', default='/home/jerry/Documents/code/densenet-pytorch-master/runs2_C_aug_heidian/DenseNet_Unet_fs/D_20200323_CP0.pth',
                     metavar='FILE',
@@ -69,11 +68,9 @@ class_to_idx={0:'NG', 1:'OK'}
 val_dirs = '/home/jerry/Desktop/val_daowen/NG/'
 output_path='/home/jerry/Desktop/test_result/'
 
-# granule_path='C:\\Users\\fs\\Desktop\\410unet+densenet\\densedataset\\test\\result\\granule\\'
-# other_path='C:\\Users\\fs\\Desktop\\410unet+densenet\\densedataset\\test\\result\\other\\'
+
 files = os.listdir(val_dirs)
-# for index,value in enumerate(files):
-#     files[index] = val_dirs + files[index]
+
 if os.path.exists(output_path):
     shutil.rmtree(output_path)  # delete output folder
 os.makedirs(output_path)  # make new output folder
@@ -91,13 +88,7 @@ def predict_img(net,full_img):
     transform_train = transforms.Compose([
         transforms.Resize([128,128]),
         transforms.ToTensor(),
-        normalize,
-            ])
-    # full_img=numpy.asarray(full_img)
-    #
-    # # flag,full_img = adaptivehistogram_enhance(full_img)
-    # # outimg=full_img
-    # full_img = Image.fromarray(full_img)
+        normalize,])
     input = transform_train(full_img)
 
     input = input.unsqueeze(0)
@@ -120,25 +111,10 @@ def predict_img(net,full_img):
 if __name__ == "__main__":
     # args = get_args()
     in_files = files
-
     net = torch.load(args.model)
 
-    # print(list(net))
-    # net=net['state_dict']
     net.cuda()
     net.eval()
-    # net = dn.DenseNet3(100, 4, 24, bottleneck=args.bottleneck,  small_inputs = False)
-    #
-    # print("Loading model {}".format(args.model))
-    #
-    # if not args.cpu:
-    #     print("Using CUDA version of the net, prepare your GPU !")
-    #     net.cuda()
-    #     net.load_state_dict(torch.load(args.model))
-    # else:
-    #     net.cpu()
-    #     net.load_state_dict(torch.load(args.model, map_location='cpu'))
-    #     print("Using CPU version of the net, this may be very slow")
 
     print("Model loaded :",args.model)
     # start2 = time.clock()
@@ -148,12 +124,9 @@ if __name__ == "__main__":
         print("\nPredicting image {} ...".format(fn))
         fn=val_dirs + in_files[i]
         img = Image.open(fn)
-        # img = img.convert("BGR")
         img2=img
         image = cv2.imread(fn)
-        # image2 = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
         flag,result,log = predict_img(net=net,full_img=img2)
-        # print("result:",result[0][0])
         print("log:::",log[0][1])
         worksheet.write(i, 0, in_files[i])
         worksheet.write(i, 1, result[0][0])
@@ -166,22 +139,8 @@ if __name__ == "__main__":
             os.makedirs(output_img_path)
         out_files=os.path.join(output_img_path,in_files[i])
         shutil.copyfile(fn, out_files)
-        # if log[0][0]>=0.5:
-        #     out_files=bubble_path + in_files[i]
-        #     shutil.copyfile(fn, out_files)
-        #     # image2.save(out_files)
-        #     # cv2.imwrite(out_files,image)
-        #
-        # else:
-        #     out_files=flaw_path + in_files[i]
-        #     shutil.copyfile(fn, out_files)
-        #     # image2.save(out_files)
-        #     # cv2.imwrite(out_files, image)
 
 
         print("Mask saved to {}".format(out_files))
     # end2 = time.clock()
     workbook.close()
-    # print('Total running time:%s Seconds'%(end2-start2))
-    # global totaltime1
-    # print('Totalmodel running time:%s Seconds'%(totaltime1))
