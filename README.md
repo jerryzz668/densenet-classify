@@ -60,20 +60,7 @@ If you use DenseNets in your work, please cite the original paper as:
 
 If this implementation is useful to you and your project, please also consider to cite or acknowledge this code repository.
 
-### References 
-[1] Huang, G., Liu, Z., Weinberger, K. Q., & van der Maaten, L. (2016). Densely connected convolutional networks. arXiv preprint arXiv:1608.06993.
-
-[2] Huang, G., Sun, Y., Liu, Z., Sedra, D., & Weinberger, K. Q. (2016). Deep networks with stochastic depth. In European Conference on Computer Vision (ECCV '16)
-
-[3] Veit, A., Wilber, M. J., & Belongie, S. (2016). Residual networks behave like ensembles of relatively shallow networks. In Advances in Neural Information Processing Systems (NIPS '16)
-
-[4] He, K., Zhang, X., Ren, S., & Sun, J. (2016). Deep residual learning for image recognition. In Conference on Computer Vision and Pattern Recognition (CVPR '16)
-
-
-
 
 python train.py --layers 38 --growth 24 --droprate 0.2 --lr 0.0001 --epochs 830
-
-
 
 python train.py --layers 100 --growth 12 --droprate 0.2 --lr 0.1 --resume 'C:\Users\fs\Desktop\densenet-pytorch-master\runs\DenseNet_Unet_fs\checkpoint.pth' --start-epoch 100 --tensorboard
