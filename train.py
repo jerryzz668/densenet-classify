@@ -2,7 +2,6 @@ import argparse
 import os
 import shutil
 import time
-
 import torch
 import torch.nn as nn
 import torch.nn.parallel
@@ -12,57 +11,40 @@ import torch.utils.data
 import torchvision.transforms as transforms
 import torchvision.datasets as datasets
 import torchvision.models as models2
-import adabound
-import models.densenet as dn
-import torchvision.models as models2
-models=models2.resnet18()
-import models.datasets as da
-import PIL
-import torchvision.models as models
-from torch.optim import SGD, Adam, lr_scheduler
-import pdb
 
+import models.densenet as dn
+from torch.optim import SGD, Adam, lr_scheduler
+# used for logging to TensorBoard
+# from tensorboard_logger import configure, log_value
 
 parser = argparse.ArgumentParser(description='PyTorch DenseNet Training')
-parser.add_argument('--epochs', default=300, type=int,
-                    help='number of total epochs to run')
-parser.add_argument('--start-epoch', default=0, type=int,
-                    help='manual epoch number (useful on restarts)')
-parser.add_argument('-b', '--batch-size', default=16, type=int,
-                    help='mini-batch size (default: 32)')
-parser.add_argument('--lr', '--learning-rate', default=0.0001, type=float,
-                    help='initial learning rate')
+parser.add_argument('--epochs', default=300, type=int, help='number of total epochs to run')
+parser.add_argument('--start-epoch', default=0, type=int, help='manual epoch number (useful on restarts)')
+parser.add_argument('-b', '--batch-size', default=8, type=int, help='mini-batch size (default: 32)')
+parser.add_argument('--lr', '--learning-rate', default=0.0001, type=float, help='initial learning rate')
 parser.add_argument('--momentum', default=0.9, type=float, help='momentum')
-parser.add_argument('--weight-decay', '--wd', default=1e-4, type=float,
-                    help='weight decay (default: 1e-4)')
-parser.add_argument('--print-freq', '-p', default=5, type=int,
-                    help='print frequency (default: 10)')
-parser.add_argument('--layers', default=20, type=int,
-                    help='total number of layers (default: 100)')
-parser.add_argument('--growth', default=16, type=int,
-                    help='number of new channels per layer (default: 12)')
-parser.add_argument('--droprate', default=0.2, type=float,
-                    help='dropout probability (default: 0.0)')
-parser.add_argument('--no-augment', dest='augment', action='store_false',
-                    help='whether to use standard augmentation (default: False)')
-parser.add_argument('--reduce', default=0.5, type=float,
-                    help='compression rate in transition stage (default: 0.5)')
-parser.add_argument('--no-bottleneck', dest='bottleneck', action='store_false',
-                    help='To not use bottleneck block')
-parser.add_argument('--resume', default='', type=str,
-                    help='path to latest checkpoint (default: none)')
-parser.add_argument('--name', default='DenseNet_Unet_fs', type=str,
-                    help='name of experiment')
-parser.add_argument('--tensorboard',
-                    help='Log progress to TensorBoard', action='store_true')
+parser.add_argument('--weight-decay', '--wd', default=1e-4, type=float, help='weight decay (default: 1e-4)')
+parser.add_argument('--print-freq', '-p', default=10, type=int, help='print frequency (default: 10)')
+parser.add_argument('--layers', default=64, type=int, help='total number of layers (default: 100)')
+parser.add_argument('--growth', default=16, type=int, help='number of new channels per layer (default: 12)')
+parser.add_argument('--droprate', default=0.2, type=float, help='dropout probability (default: 0.0)')
+parser.add_argument('--no-augment', dest='augment', action='store_false', help='whether to use standard augmentation (default: False)')
+parser.add_argument('--reduce', default=0.5, type=float, help='compression rate in transition stage (default: 0.5)')
+parser.add_argument('--no-bottleneck', dest='bottleneck', action='store_false', help='To not use bottleneck block')
+parser.add_argument('--resume', default='', type=str, help='path to latest checkpoint (default: none)')
+parser.add_argument('--name', default='DenseNet_Unet_fs', type=str, help='name of experiment')
+parser.add_argument('--tensorboard', help='Log progress to TensorBoard', action='store_true')
+parser.add_argument('--save_checkpoint', default='Micro_r_ylh6-1-resume-3', type=str, help='save path of .pth')
 parser.set_defaults(bottleneck=True)
 parser.set_defaults(augment=False)
+
+dataset_dir = '/home/jerry/data/Micro_R/R/yinglihen/0228-ylh/4_8_dataset'
+train_dirs = os.path.join(dataset_dir, 'train')
+val_dirs = os.path.join(dataset_dir, 'val')
 
 best_prec1 = 0
 slr=0.1
 
-train_dirs = '/home/jerry/Desktop/fenlei'
-val_dirs = '/home/jerry/Desktop/val_daowen'
 def main():
     global args, best_prec1
     args = parser.parse_args()
@@ -74,9 +56,9 @@ def main():
     
     if args.augment:
         transform_train = transforms.Compose([
-            transforms.Pad(padding=32,fill=0,padding_mode='reflect'),
+            # transforms.Pad(padding=32,fill=0,padding_mode='reflect'),
             # transforms.Resize([1408,1024]),
-            transforms.CenterCrop(64),
+            # transforms.CenterCrop(64),
             transforms.ColorJitter(brightness=0.5, contrast=0.5, hue=0.5),
             transforms.RandomAffine(3),
             transforms.RandomHorizontalFlip(),
@@ -86,36 +68,46 @@ def main():
             ])
     else:
         transform_train = transforms.Compose([
-            transforms.Resize([32,32]),
-
-            transforms.ColorJitter(brightness=0.5, contrast=0.5, hue=0.5),
-            transforms.RandomAffine(3),
-            transforms.RandomHorizontalFlip(),            transforms.RandomVerticalFlip(),
+            # transforms.Pad(padding=32, fill=0, padding_mode='reflect'),
+            # # transforms.Resize([1408,1024]),
+            # transforms.CenterCrop(96),
+            transforms.Resize([512,512]),
+            # transforms.RandomResizedCrop(64),
+            # transforms.RandomHorizontalFlip(),            # transforms.RandomVerticalFlip(),
+            # transforms.RandomAffine(3),
+            # transforms.ColorJitter(brightness=0.3),
+            # transforms.RandomCrop(size=220),
+            # transforms.Pad(padding=2, fill=0, padding_mode='edge'),
+            # transforms.RandomErasing(p=0.5,scale=(0.02,0.2)),
+            # transforms.ColorJitter(brightness=0.5, contrast=0.5, hue=0.5),   ################
+            #transforms.RandomAffine(3),
+            # transforms.RandomHorizontalFlip(p=0.2),  ########################
+            #transforms.RandomVerticalFlip(p=0.2),
+            #  transforms.RandomRotation(20, resample=False, expand=False, center=None),
+            # transforms.GaussianBlur(p=0.2),
             transforms.ToTensor(),
+            #transforms.RandomErasing(p=0.2, scale=(0.02, 0.2), ratio=(0.3, 0.3), value=0, inplace=False),
             normalize,
             ])
-    transform_test = transforms.Compose([
-        transforms.Resize([32,32]),
+    transform_val = transforms.Compose([
+        # transforms.CenterCrop(96),
+        transforms.Resize([512,512]),
+        # transforms.Pad(padding=32, fill=0, padding_mode='reflect'),
+        # transforms.Resize([1408,1024]),
+        # transforms.CenterCrop(size=192),
         transforms.ToTensor(),
         normalize
         ])
+    #normalize = transforms.Normalize(mean=[0.485,0.456,0.406], std=[0.229,0.224,0.225])
 
-    train_dataset = datasets.ImageFolder(
-        train_dirs,
-        transform_train
-        )
+    train_dataset = datasets.ImageFolder(train_dirs, transform_train)
+    val_dataset = datasets.ImageFolder(val_dirs, transform_val)
     print('train_dataset:{}'.format(train_dataset))     
-    val_dataset = datasets.ImageFolder(
-        val_dirs,
-        transform_test)
-             
+    #pdb.set_trace()
+    
     kwargs = {'num_workers': 16, 'pin_memory': True}
-    train_loader = torch.utils.data.DataLoader(
-        train_dataset,
-        batch_size=args.batch_size, shuffle=True, **kwargs)
-    val_loader = torch.utils.data.DataLoader(
-        val_dataset,
-        batch_size=args.batch_size, shuffle=True, **kwargs)
+    train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=args.batch_size, shuffle=True, **kwargs)
+    val_loader = torch.utils.data.DataLoader(val_dataset, batch_size=args.batch_size, shuffle=True, **kwargs)
 
     # create model
     print("args.layers",args.layers)
@@ -124,11 +116,20 @@ def main():
     print("args.bottleneck",args.bottleneck)
     print("args.droprate",args.droprate)
     print("args.lr",args.lr)
-    model = dn.DenseNet3(args.layers, 2, args.growth, reduction=args.reduce,
-                         bottleneck=args.bottleneck, dropRate=args.droprate, small_inputs = False)
-
-    print('Number of model parameters: {}'.format(
-        sum([p.data.nelement() for p in model.parameters()])))
+    kwargs= {'num_classes': 2}
+    # model=mobilenetv3_small(**kwargs)
+    model=models2.mobilenet_v3_small(**kwargs)
+    # model = models2.resnet18(**kwargs)
+    # model = dn.DenseNet3(args.layers, 10, args.growth, reduction=args.reduce,
+    #                      bottleneck=args.bottleneck, dropRate=args.droprate, small_inputs = False)
+    # kwargs = {'num_classes': 2}
+    # model = models2.densenet121(**kwargs)
+    # get the number of model parameters
+    print('Number of model parameters: {}'.format(sum([p.data.nelement() for p in model.parameters()])))
+    
+    # for training on multiple GPUs. 
+    # Use CUDA_VISIBLE_DEVICES=0,1 to specify which GPUs to use
+    # model = torch.nn.DataParallel(model).cuda()
     
     model = model.cuda()
 
@@ -137,7 +138,8 @@ def main():
         if os.path.isfile(args.resume):
             print("=> loading checkpoint '{}'".format(args.resume))
             checkpoint = torch.load(args.resume)
-            args.start_epoch = checkpoint['epoch']
+            # args.start_epoch = checkpoint['epoch']
+            args.start_epoch = 0
             best_prec1 = checkpoint['best_prec1']
             model.load_state_dict(checkpoint['state_dict'])
             print("=> loaded checkpoint '{}' (epoch {})"
@@ -147,7 +149,6 @@ def main():
 
     cudnn.benchmark = True
 
-    
     # define loss function (criterion) and pptimizer
     criterion = nn.CrossEntropyLoss().cuda()
     optimizer = torch.optim.SGD(model.parameters(), args.lr,
@@ -156,17 +157,21 @@ def main():
                                 weight_decay=args.weight_decay)
 
     print ("Start training..")
-
     for epoch in range(args.start_epoch, args.epochs):
         FS_lr=adjust_learning_rate(optimizer, epoch,args.epochs)
         print("lr='{}'".format(FS_lr))
+        # train for one epoch
+        # scheduler.step(epoch)
+        # for param_group in optimizer.param_groups:
+        #     lr=param_group['lr']
+        # print("lr='{}'".format(lr))
         train(train_loader, model, criterion, optimizer, epoch)
 
         # evaluate on validation set
         prec1 = validate(val_loader, model, criterion, epoch)
 
         # remember best prec@1 and save checkpoint
-        is_best = prec1 > best_prec1
+        is_best = prec1 >= best_prec1
         best_prec1 = max(prec1, best_prec1)
         save_checkpoint({
             'epoch': epoch + 1,
@@ -186,15 +191,26 @@ def train(train_loader, model, criterion, optimizer, epoch):
 
     end = time.time()
     for i, (input, target) in enumerate(train_loader):
-
+        #pdb.set_trace()
         target = target.cuda()
         input = input.cuda()
+        # print('input:{}'.format(input))
+        # print('input.size:{}'.format(input.size(2)))
         input_var = torch.autograd.Variable(input)
         target_var = torch.autograd.Variable(target)
+        # print('input_var:{}'.format(input_var))
+        # print('input_var.size:{}'.format(input_var.size(2)))
+        # print('target:{}'.format(target))
+        # print('target_var:{}'.format(target_var))
+        # print('target_var.size:{}'.format(target_var.size(0)))
         # compute output
         output = model(input_var)
+        # print("output>shape:",output.shape)
+        # print('output:{}'.format(output.size()))
+        #pdb.set_trace()
         loss = criterion(output, target_var)
-
+        # print('loss:{}'.format(loss))
+        # measure accuracy and record loss
         prec1 = accuracy(output.data, target, topk=(1,))[0]
         losses.update(loss.item(), input.size(0))
         top1.update(prec1.item(), input.size(0))
@@ -264,10 +280,10 @@ def validate(val_loader, model, criterion, epoch):
         log_value('val_acc', top1.avg, epoch)
     return top1.avg
 
-
-def save_checkpoint(state, model,is_best, filename='D_20200323_checkpoint.pth',filename2='D_20200323_CP0.pth'):
+def save_checkpoint(state, model, is_best, filename='D_20200323_checkpoint.pth',filename2='D_20200323_CP0.pth'):
     """Saves checkpoint to disk"""
-    directory = "runs2_C_aug_heidian/%s/"%(args.name)
+    directory = "%s/%s/"%(args.save_checkpoint, args.name+"1")
+    print(directory)
     if not os.path.exists(directory):
         os.makedirs(directory)
     filename = directory + filename
@@ -276,7 +292,7 @@ def save_checkpoint(state, model,is_best, filename='D_20200323_checkpoint.pth',f
    
     if is_best:
         torch.save(model, filename2)
-        shutil.copyfile(filename, 'runs2_C_aug_heidian/%s/'%(args.name) + 'D_20200323_model_best.pth')
+        shutil.copyfile(filename, directory + 'D_20200323_model_best.pth')
 
 class AverageMeter(object):
     """Computes and stores the average and current value"""
@@ -304,7 +320,7 @@ def adjust_learning_rate(optimizer, epoch,epochs):
         global slr
         slr=lr
     else:
-        lr = slr * (0.993 ** (epoch-epochs*0.1))
+        lr = slr * (0.984 ** (epoch-epochs*0.1))
 
     # log to TensorBoard
     if args.tensorboard:
@@ -316,13 +332,28 @@ def adjust_learning_rate(optimizer, epoch,epochs):
 def accuracy(output, target, topk=(1,)):
     """Computes the precision@k for the specified values of k"""
     maxk = max(topk)
+    # print('topk:{}'.format(topk))
+    # print('maxk:{}'.format(maxk))
     batch_size = target.size(0)
     
+    
     _, pred = output.topk(maxk, 1, True, True)
+    # print('_:{}'.format(_))
+    # print('pred:{}'.format(pred))
     pred = pred.t()
+    # print('pred2:{}'.format(pred))
+    # print('target:{}'.format(target))
+    # print('target.view(1, -1):{}'.format(target.view(1, -1)))
+
+    # target.view(1, -1)
     correct = pred.eq(target.view(1, -1).expand_as(pred))
+    # print('correct:{}'.format(correct))
     res = []
     for k in topk:
+        # print('k:{}'.format(k))
+        # print('correct[:k]:{}'.format(correct[:k].view(-1)))
+        # print('correct[:k].size():{}'.format(correct[:k].view(-1).size()))
+        # a.view(-1),
         correct_k = correct[:k].view(-1).float().sum(0)
         res.append(correct_k.mul_(100.0 / batch_size))
     return res
